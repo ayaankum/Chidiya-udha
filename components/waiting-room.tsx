@@ -3,8 +3,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { Crown, Timer, Users } from "lucide-react"
+import { Crown, Timer, Users, UserMinus } from "lucide-react"
 import type { Player } from "@/lib/types"
+import { useEffect, useState, useRef } from 'react';
+import { cn } from "@/lib/utils"
 
 export default function WaitingRoom({
   players,
@@ -19,16 +21,73 @@ export default function WaitingRoom({
   gameDuration: number
   onDurationChange: (value: number) => void
 }) {
-  console.log("WaitingRoom rendering with players:", players) // Add debug logging
+  const prevPlayersRef = useRef<Player[]>([]);
+  const [playerChanges, setPlayerChanges] = useState<{
+    joins: {[key: string]: boolean},
+    leaves: string[]
+  }>({
+    joins: {},
+    leaves: []
+  });
   
-  // Check for duplicate player IDs
-  const playerIds = players.map(p => p.id);
-  const hasDuplicateIds = playerIds.length !== new Set(playerIds).size;
-  
-  if (hasDuplicateIds) {
-    console.error("Duplicate player IDs detected:", 
-      playerIds.filter((id, index) => playerIds.indexOf(id) !== index));
-  }
+  // Track player changes with useEffect to highlight changes
+  useEffect(() => {
+    if (prevPlayersRef.current.length > 0) {
+      // Find players who left
+      const leftPlayers = prevPlayersRef.current.filter(
+        prev => !players.some(current => current.id === prev.id)
+      );
+      
+      // Log player changes
+      if (leftPlayers.length > 0) {
+        console.log(`%c[${new Date().toLocaleTimeString()}] Detected players left in UI:`, "color: purple", {
+          leftPlayers: leftPlayers.map(p => `${p.name} (${p.id})`),
+          currentPlayerCount: players.length,
+          previousPlayerCount: prevPlayersRef.current.length
+        });
+      }
+      
+      // Find players who joined
+      const joinedPlayers = players.filter(
+        current => !prevPlayersRef.current.some(prev => prev.id === current.id)
+      );
+      
+      if (joinedPlayers.length > 0) {
+        console.log(`%c[${new Date().toLocaleTimeString()}] Detected new players in UI:`, "color: green", {
+          joinedPlayers: joinedPlayers.map(p => `${p.name} (${p.id})`),
+          currentPlayerCount: players.length,
+          previousPlayerCount: prevPlayersRef.current.length
+        });
+      }
+      
+      // Find players who joined
+      const newJoins = players.reduce((acc: {[key: string]: boolean}, player) => {
+        if (!prevPlayersRef.current.some(prev => prev.id === player.id)) {
+          acc[player.id] = true;
+        }
+        return acc;
+      }, {});
+      
+      if (leftPlayers.length > 0 || Object.keys(newJoins).length > 0) {
+        // Update changes state
+        setPlayerChanges({
+          joins: {...playerChanges.joins, ...newJoins},
+          leaves: [...leftPlayers.map(p => p.name)]
+        });
+        
+        // Clear highlights after animation
+        setTimeout(() => {
+          setPlayerChanges(prev => ({
+            joins: {},
+            leaves: []
+          }));
+        }, 3000);
+      }
+    }
+    
+    // Update reference for next comparison
+    prevPlayersRef.current = [...players];
+  }, [players]);
   
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -38,23 +97,34 @@ export default function WaitingRoom({
             <Users className="h-5 w-5" />
             Players in Room ({players.length})
           </CardTitle>
+          
+          {playerChanges.leaves.length > 0 && (
+            <div className="text-sm text-orange-500 flex items-center gap-1 animate-pulse">
+              <UserMinus className="h-4 w-4" />
+              {playerChanges.leaves.join(", ")} left the room
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {Array.isArray(players) && players.length > 0 ? (
-              players.map((player, index) => (
-                // Use combination of player.id and index to ensure uniqueness
-                <div key={`${player.id}-${index}`} className="p-3 bg-yellow-50 rounded-md flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {player.isHost && <Crown className="h-4 w-4 text-yellow-500" />}
-                    <span className="font-medium">{player.name}</span>
-                  </div>
-                  {player.isHost && <span className="text-sm text-orange-500 font-medium">Host</span>}
+            {players.map((player) => (
+              <div 
+                key={player.id} 
+                className={cn(
+                  "p-3 rounded-md flex items-center justify-between transition-all",
+                  playerChanges.joins[player.id] ? 
+                    "bg-yellow-200 animate-pulse" : 
+                    "bg-yellow-50"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  {player.isHost && <Crown className="h-4 w-4 text-yellow-500" />}
+                  <span className="font-medium">{player.name}</span>
                 </div>
-              ))
-            ) : (
-              <p className="text-orange-700 text-center py-4">No players have joined yet</p>
-            )}
+                {player.isHost && <span className="text-sm text-orange-500 font-medium">Host</span>}
+              </div>
+            ))}
+            {players.length === 0 && <p className="text-orange-700 text-center py-4">No players have joined yet</p>}
           </div>
         </CardContent>
       </Card>

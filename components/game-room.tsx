@@ -28,6 +28,7 @@ export default function GameRoom({
   const [reconnecting, setReconnecting] = useState(false)
   const [connecting, setConnecting] = useState(true)
   const [gameDuration, setGameDuration] = useState(10)
+  const [playerLeftMessage, setPlayerLeftMessage] = useState<string | null>(null);
 
   const {
     gameState,
@@ -103,21 +104,42 @@ export default function GameRoom({
       socketInstance.on("playerJoined", (data) => {
         console.log("Player joined event received:", data);
         setPlayers(data.players);
+        // Show toast or notification that a player joined
       });
 
+      // Add better logging for player left events
       socketInstance.on("playerLeft", (data) => {
-        setPlayers(data.players);
-        // If host changed and current player is the new host
-        if (data.newHostId === initialPlayerId) {
-          setIsHost(true);
-          // Find current player in updated players list to maintain correct score
-          const currentPlayerInList = data.players.find((p: any) => p.id === initialPlayerId);
-          setCurrentPlayer({
-            id: initialPlayerId,
-            name: initialPlayerName,
-            score: currentPlayerInList?.score || 0,
-            isHost: true
-          });
+        console.log(`%c[${new Date().toLocaleTimeString()}] Player left event received:`, "color: red; font-weight: bold", {
+          leftPlayerName: data.leftPlayerName,
+          leftPlayerId: data.leftPlayerId,
+          remainingPlayers: data.players?.length || 0,
+          timestamp: data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : 'No timestamp',
+          newHostId: data.newHostId || 'No host change'
+        });
+        
+        // Check for timestamp to ensure we're getting the latest data
+        if (data.timestamp && data.players) {
+          setPlayers(data.players);
+          
+          // Display a notification when a player leaves
+          if (data.leftPlayerName) {
+            setPlayerLeftMessage(`${data.leftPlayerName} has left the game`);
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => setPlayerLeftMessage(null), 5000);
+          }
+          
+          // If host changed and current player is the new host
+          if (data.newHostId === initialPlayerId) {
+            setIsHost(true);
+            // Find current player in updated players list to maintain correct score
+            const currentPlayerInList = data.players.find((p: any) => p.id === initialPlayerId);
+            setCurrentPlayer({
+              id: initialPlayerId,
+              name: initialPlayerName,
+              score: currentPlayerInList?.score || 0,
+              isHost: true
+            });
+          }
         }
       });
 
@@ -137,12 +159,25 @@ export default function GameRoom({
       setSocket(socketInstance);
     };
 
+    // Add event listener for leave game request
+    const handleLeaveGameRequest = () => {
+      leaveRoom();
+    };
+    
+    window.addEventListener('leaveGameRequest', handleLeaveGameRequest);
+
     // Initial connection
     connectSocket();
 
-    // Cleanup function
+    // Add logging for the cleanup function in useEffect
     return () => {
+      console.log(`%c[${new Date().toLocaleTimeString()}] Component unmounting, cleaning up socket`, "color: orange; font-weight: bold");
+      
+      window.removeEventListener('leaveGameRequest', handleLeaveGameRequest);
       if (socketInstance) {
+        console.log(`%c[${new Date().toLocaleTimeString()}] Emitting leaveRoom due to component unmount`, "color: orange; font-weight: bold");
+        // Explicitly emit leave room before disconnecting
+        socketInstance.emit("leaveRoom");
         socketInstance.disconnect();
       }
     };
@@ -157,9 +192,17 @@ export default function GameRoom({
     }
   }
 
+  // Add logging for the leaveRoom function outside useEffect
   const leaveRoom = () => {
+    console.log(`%c[${new Date().toLocaleTimeString()}] Explicitly leaving room`, "color: orange; font-weight: bold", {
+      playerId: initialPlayerId,
+      playerName: initialPlayerName,
+      roomId
+    });
+    
     if (socket) {
-      // Disconnect socket
+      // Explicitly notify server that player is leaving
+      socket.emit("leaveRoom");
       socket.disconnect();
     }
     
@@ -239,8 +282,23 @@ export default function GameRoom({
     );
   }
 
+  // Add player left notification
+  const renderPlayerLeftNotification = () => {
+    if (!playerLeftMessage) return null;
+    
+    return (
+      <div className="fixed top-4 right-4 bg-orange-100 border border-orange-300 text-orange-700 px-4 py-3 rounded shadow-md z-50">
+        <div className="flex">
+          <div>{playerLeftMessage}</div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-yellow-100 to-orange-100 p-4">
+      {renderPlayerLeftNotification()}
+      
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <GameLogo />

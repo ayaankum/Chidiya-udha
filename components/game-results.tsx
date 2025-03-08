@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Trophy, Medal, Award } from "lucide-react"
+import { Trophy, Medal, Award, LogOut } from "lucide-react"
 import type { Player } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -17,6 +17,14 @@ export default function GameResults({
 }) {
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score)
   const winners = sortedPlayers.slice(0, 3)
+
+  // Instead of directly redirecting, we should use the proper leaveRoom function
+  const handleLeaveGame = () => {
+    console.log(`%c[${new Date().toLocaleTimeString()}] Leave game button clicked in results screen`, "color: orange; font-weight: bold");
+    // We'll use a custom event to trigger the parent component's leaveRoom function
+    const leaveEvent = new CustomEvent('leaveGameRequest');
+    window.dispatchEvent(leaveEvent);
+  };
 
   return (
     <div className="grid gap-6">
@@ -71,12 +79,31 @@ export default function GameResults({
               </div>
             </div>
 
-            {isHost && (
-              <Button onClick={onPlayAgain} className="mt-8 bg-orange-500 hover:bg-orange-600 text-white font-bold">
-                Play Again
+            <div className="mt-8 flex flex-wrap gap-4 justify-center">
+              {isHost && (
+                <Button 
+                  onClick={onPlayAgain} 
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold"
+                >
+                  Play Again
+                </Button>
+              )}
+              
+              <Button
+                onClick={handleLeaveGame}
+                variant="outline"
+                className="border-orange-300 text-orange-700 hover:bg-orange-100 flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Leave Game
               </Button>
-            )}
-            {!isHost && <p className="mt-8 text-orange-700">Waiting for the host to start a new game...</p>}
+            </div>
+            
+            {!isHost && 
+              <p className="mt-4 text-orange-700">
+                Waiting for the host to start a new game...
+              </p>
+            }
           </div>
         </CardContent>
       </Card>

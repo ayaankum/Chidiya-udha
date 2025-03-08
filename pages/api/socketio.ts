@@ -55,18 +55,28 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
     io.on("connection", (socket) => {
       console.log(`Socket connected: ${socket.id}`)
 
+      // Track socket-to-player mapping for disconnection handling
+      const playerSockets = new Map();
+
       socket.on("error", (error) => {
         console.error(`Socket ${socket.id} error:`, error);
       });
 
-      // Join a room
+      // Join a room - store player info in socket.data for disconnect tracking
       socket.on("joinRoom", ({ roomId, playerId, playerName }) => {
         try {
           console.log(`Player ${playerName} (${playerId}) joining room ${roomId}`);
           
+          // Store player info in socket data
+          socket.data.playerId = playerId;
+          socket.data.roomId = roomId;
+          socket.data.playerName = playerName;
+          
+          // Add to tracking map
+          playerSockets.set(socket.id, { playerId, roomId, playerName });
+          
+          // Join the socket to the room
           socket.join(roomId);
-          socket.data.playerId = playerId; // Store playerId in socket data
-          socket.data.roomId = roomId;  // Store room ID in socket data
           
           // Create room if it doesn't exist
           if (!rooms[roomId]) {
@@ -252,50 +262,128 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
         })
       })
 
-      // Handle disconnection
+      // Handle explicit leave room request
+      socket.on("leaveRoom", () => {
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] Socket ${socket.id} explicitly requested to leave room`);
+        
+        const { playerId, roomId, playerName } = socket.data;
+        if (playerId && roomId) {
+          console.log(`[${timestamp}] LeaveRoom details:`, {
+            playerId,
+            playerName,
+            roomId,
+            socketId: socket.id
+          });
+        }
+        
+        handlePlayerLeaving(socket);
+      });
+
+      // Handle disconnection - improved implementation with better logging
       socket.on("disconnecting", () => {
-        // Get all rooms this socket is in
-        const socketRooms = Array.from(socket.rooms).filter((room) => room !== socket.id)
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] Socket ${socket.id} disconnecting...`);
+        
+        const { playerId, roomId, playerName } = socket.data;
+        if (playerId && roomId) {
+          console.log(`[${timestamp}] Disconnection details:`, {
+            playerId,
+            playerName,
+            roomId,
+            socketId: socket.id,
+            rooms: Array.from(socket.rooms)
+          });
+        }
+        
+        handlePlayerLeaving(socket);
+      });
 
-        socketRooms.forEach((roomId) => {
-          const room = rooms[roomId]
-          if (!room) return
+      // Improved player leaving handler
+      function handlePlayerLeaving(socket: any) {
+        const timestamp = new Date().toISOString();
+        const { playerId, roomId, playerName } = socket.data;
+        
+        if (!playerId || !roomId) {
+          console.log(`[${timestamp}] Socket ${socket.id} disconnected but had no room/player data`);
+          return; // Nothing to clean up
+        }
+        
+        console.log(`[${timestamp}] Player ${playerName} (${playerId}) leaving room ${roomId}`);
+        
+        const room = rooms[roomId];
+        if (!room) {
+          console.log(`[${timestamp}] Room ${roomId} not found when player ${playerName} disconnected`);
+          return;
+        }
 
-          // Find player
-          const playerIndex = room.players.findIndex((p) => p.id === socket.data.playerId)
-          if (playerIndex === -1) return
+        // Verify player is in the room
+        const playerIndex = room.players.findIndex((p) => p.id === playerId);
+        if (playerIndex === -1) {
+          console.log(`[${timestamp}] Player ${playerName} (${playerId}) not found in room ${roomId}`);
+          return;
+        }
 
-          const player = room.players[playerIndex]
-          const wasHost = player.isHost
+        // Log room state before removal
+        console.log(`[${timestamp}] Room ${roomId} before player removal:`, {
+          totalPlayers: room.players.length,
+          players: room.players.map(p => `${p.name} (${p.id})`),
+          gameState: room.gameState,
+          hostId: room.hostId
+        });
 
-          // Remove player
-          room.players.splice(playerIndex, 1)
+        const player = room.players[playerIndex];
+        const wasHost = player.isHost;
 
-          // If room is empty, delete it
-          if (room.players.length === 0) {
-            if (room.gameInterval) {
-              clearInterval(room.gameInterval)
-            }
-            delete rooms[roomId]
-            return
+        // Remove player from room
+        room.players.splice(playerIndex, 1);
+        
+        // Log room state after removal
+        console.log(`[${timestamp}] Room ${roomId} after player removal:`, {
+          remainingPlayers: room.players.length,
+          players: room.players.map(p => `${p.name} (${p.id})`),
+        });
+
+        // If room is empty, cleanup and delete
+        if (room.players.length === 0) {
+          console.log(`[${timestamp}] Room ${roomId} is empty, cleaning up`);
+          if (room.gameInterval) {
+            clearInterval(room.gameInterval);
           }
+          delete rooms[roomId];
+          return;
+        }
 
-          // If host left, assign new host
-          let newHostId = null
-          if (wasHost && room.players.length > 0) {
-            const newHost = room.players[0]
-            newHost.isHost = true
-            newHostId = newHost.id
-            room.hostId = newHost.id
-          }
+        // If host left, assign new host
+        let newHostId = null;
+        if (wasHost && room.players.length > 0) {
+          const newHost = room.players[0];
+          newHost.isHost = true;
+          newHostId = newHost.id;
+          room.hostId = newHost.id;
+          console.log(`[${timestamp}] New host assigned in room ${roomId}: ${newHost.name} (${newHost.id})`);
+        }
 
-          // Notify remaining players
-          io.to(roomId).emit("playerLeft", {
-            players: room.players,
-            newHostId,
-          })
-        })
-      })
+        // Force socket to leave room
+        socket.leave(roomId);
+
+        // Notify remaining players with improved data
+        console.log(`[${timestamp}] ⚠️ Emitting playerLeft event to room ${roomId}`);
+        io.to(roomId).emit("playerLeft", {
+          players: room.players,
+          newHostId,
+          leftPlayerId: playerId,
+          leftPlayerName: playerName,
+          timestamp: Date.now()
+        });
+        
+        // Verify the event was sent
+        setTimeout(() => {
+          const socketsInRoom = io.sockets.adapter.rooms.get(roomId);
+          const socketCount = socketsInRoom ? socketsInRoom.size : 0;
+          console.log(`[${timestamp}] Room ${roomId} has ${socketCount} connected sockets after player left`);
+        }, 500);
+      }
     })
   }
 
