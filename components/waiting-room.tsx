@@ -38,28 +38,6 @@ export default function WaitingRoom({
         prev => !players.some(current => current.id === prev.id)
       );
       
-      // Log player changes
-      if (leftPlayers.length > 0) {
-        console.log(`%c[${new Date().toLocaleTimeString()}] Detected players left in UI:`, "color: purple", {
-          leftPlayers: leftPlayers.map(p => `${p.name} (${p.id})`),
-          currentPlayerCount: players.length,
-          previousPlayerCount: prevPlayersRef.current.length
-        });
-      }
-      
-      // Find players who joined
-      const joinedPlayers = players.filter(
-        current => !prevPlayersRef.current.some(prev => prev.id === current.id)
-      );
-      
-      if (joinedPlayers.length > 0) {
-        console.log(`%c[${new Date().toLocaleTimeString()}] Detected new players in UI:`, "color: green", {
-          joinedPlayers: joinedPlayers.map(p => `${p.name} (${p.id})`),
-          currentPlayerCount: players.length,
-          previousPlayerCount: prevPlayersRef.current.length
-        });
-      }
-      
       // Find players who joined
       const newJoins = players.reduce((acc: {[key: string]: boolean}, player) => {
         if (!prevPlayersRef.current.some(prev => prev.id === player.id)) {

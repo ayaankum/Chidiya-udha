@@ -20,7 +20,6 @@ export default function GameResults({
 
   // Instead of directly redirecting, we should use the proper leaveRoom function
   const handleLeaveGame = () => {
-    console.log(`%c[${new Date().toLocaleTimeString()}] Leave game button clicked in results screen`, "color: orange; font-weight: bold");
     // We'll use a custom event to trigger the parent component's leaveRoom function
     const leaveEvent = new CustomEvent('leaveGameRequest');
     window.dispatchEvent(leaveEvent);

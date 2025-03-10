@@ -37,9 +37,7 @@ const gameObjects: GameObject[] = [
 
 const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
   if (res.socket.server.io) {
-    console.log("Socket is already running")
   } else {
-    console.log("Socket is initializing")
     const httpServer: NetServer = res.socket.server as any
     const io = new ServerIO(httpServer, {
       path: "/api/socketio",
@@ -53,20 +51,13 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
     res.socket.server.io = io
 
     io.on("connection", (socket) => {
-      console.log(`Socket connected: ${socket.id}`)
 
       // Track socket-to-player mapping for disconnection handling
       const playerSockets = new Map();
 
-      socket.on("error", (error) => {
-        console.error(`Socket ${socket.id} error:`, error);
-      });
-
       // Join a room - store player info in socket.data for disconnect tracking
       socket.on("joinRoom", ({ roomId, playerId, playerName }) => {
         try {
-          console.log(`Player ${playerName} (${playerId}) joining room ${roomId}`);
-          
           // Store player info in socket data
           socket.data.playerId = playerId;
           socket.data.roomId = roomId;
@@ -95,7 +86,6 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
           const existingPlayerIndex = rooms[roomId].players.findIndex(p => p.id === playerId);
           
           if (existingPlayerIndex >= 0) {
-            console.log(`Player ${playerName} (${playerId}) already in room, updating name`);
             // Update existing player's name
             rooms[roomId].players[existingPlayerIndex].name = playerName;
           } else {
@@ -137,9 +127,7 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
             players: uniquePlayers,
           });
           
-          console.log(`Room ${roomId} players:`, uniquePlayers);
         } catch (error) {
-          console.error("Error in joinRoom handler:", error);
           socket.emit("error", { message: "Failed to join room" });
         }
       })
@@ -264,38 +252,11 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
 
       // Handle explicit leave room request
       socket.on("leaveRoom", () => {
-        const timestamp = new Date().toISOString();
-        console.log(`[${timestamp}] Socket ${socket.id} explicitly requested to leave room`);
-        
-        const { playerId, roomId, playerName } = socket.data;
-        if (playerId && roomId) {
-          console.log(`[${timestamp}] LeaveRoom details:`, {
-            playerId,
-            playerName,
-            roomId,
-            socketId: socket.id
-          });
-        }
-        
         handlePlayerLeaving(socket);
       });
 
       // Handle disconnection - improved implementation with better logging
-      socket.on("disconnecting", () => {
-        const timestamp = new Date().toISOString();
-        console.log(`[${timestamp}] Socket ${socket.id} disconnecting...`);
-        
-        const { playerId, roomId, playerName } = socket.data;
-        if (playerId && roomId) {
-          console.log(`[${timestamp}] Disconnection details:`, {
-            playerId,
-            playerName,
-            roomId,
-            socketId: socket.id,
-            rooms: Array.from(socket.rooms)
-          });
-        }
-        
+      socket.on("disconnecting", () => { 
         handlePlayerLeaving(socket);
       });
 
@@ -308,9 +269,6 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
           console.log(`[${timestamp}] Socket ${socket.id} disconnected but had no room/player data`);
           return; // Nothing to clean up
         }
-        
-        console.log(`[${timestamp}] Player ${playerName} (${playerId}) leaving room ${roomId}`);
-        
         const room = rooms[roomId];
         if (!room) {
           console.log(`[${timestamp}] Room ${roomId} not found when player ${playerName} disconnected`);
@@ -324,13 +282,6 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
           return;
         }
 
-        // Log room state before removal
-        console.log(`[${timestamp}] Room ${roomId} before player removal:`, {
-          totalPlayers: room.players.length,
-          players: room.players.map(p => `${p.name} (${p.id})`),
-          gameState: room.gameState,
-          hostId: room.hostId
-        });
 
         const player = room.players[playerIndex];
         const wasHost = player.isHost;
@@ -338,15 +289,9 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
         // Remove player from room
         room.players.splice(playerIndex, 1);
         
-        // Log room state after removal
-        console.log(`[${timestamp}] Room ${roomId} after player removal:`, {
-          remainingPlayers: room.players.length,
-          players: room.players.map(p => `${p.name} (${p.id})`),
-        });
 
         // If room is empty, cleanup and delete
         if (room.players.length === 0) {
-          console.log(`[${timestamp}] Room ${roomId} is empty, cleaning up`);
           if (room.gameInterval) {
             clearInterval(room.gameInterval);
           }
@@ -361,14 +306,12 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
           newHost.isHost = true;
           newHostId = newHost.id;
           room.hostId = newHost.id;
-          console.log(`[${timestamp}] New host assigned in room ${roomId}: ${newHost.name} (${newHost.id})`);
         }
 
         // Force socket to leave room
         socket.leave(roomId);
 
         // Notify remaining players with improved data
-        console.log(`[${timestamp}] ⚠️ Emitting playerLeft event to room ${roomId}`);
         io.to(roomId).emit("playerLeft", {
           players: room.players,
           newHostId,
@@ -381,7 +324,6 @@ const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
         setTimeout(() => {
           const socketsInRoom = io.sockets.adapter.rooms.get(roomId);
           const socketCount = socketsInRoom ? socketsInRoom.size : 0;
-          console.log(`[${timestamp}] Room ${roomId} has ${socketCount} connected sockets after player left`);
         }, 500);
       }
     })

@@ -62,7 +62,6 @@ export default function GameRoom({
       });
 
       socketInstance.on("connect", () => {
-        console.log("Connected to socket server with ID:", socketInstance.id);
         reconnectAttempts = 0;
         setReconnecting(false);
         setConnecting(false);
@@ -76,13 +75,11 @@ export default function GameRoom({
       });
 
       socketInstance.on("connect_error", (err) => {
-        console.error("Socket connection error:", err.message);
         setSocketError(`Connection error: ${err.message}`);
         setConnecting(false);
         
         reconnectAttempts++;
         if (reconnectAttempts >= maxReconnectAttempts) {
-          console.error("Max reconnection attempts reached");
           setSocketError("Unable to connect after several attempts. Please refresh the page.");
         } else {
           setReconnecting(true);
@@ -90,7 +87,6 @@ export default function GameRoom({
       });
 
       socketInstance.on("roomJoined", (data) => {
-        console.log("Room joined event received:", data);
         setPlayers(data.players);
         setIsHost(data.isHost);
         setCurrentPlayer({
@@ -102,20 +98,12 @@ export default function GameRoom({
       });
 
       socketInstance.on("playerJoined", (data) => {
-        console.log("Player joined event received:", data);
         setPlayers(data.players);
         // Show toast or notification that a player joined
       });
 
       // Add better logging for player left events
       socketInstance.on("playerLeft", (data) => {
-        console.log(`%c[${new Date().toLocaleTimeString()}] Player left event received:`, "color: red; font-weight: bold", {
-          leftPlayerName: data.leftPlayerName,
-          leftPlayerId: data.leftPlayerId,
-          remainingPlayers: data.players?.length || 0,
-          timestamp: data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : 'No timestamp',
-          newHostId: data.newHostId || 'No host change'
-        });
         
         // Check for timestamp to ensure we're getting the latest data
         if (data.timestamp && data.players) {
@@ -152,10 +140,6 @@ export default function GameRoom({
         setGameState("results");
       });
 
-      socketInstance.on("disconnect", () => {
-        console.log("Disconnected from socket server");
-      });
-
       setSocket(socketInstance);
     };
 
@@ -173,7 +157,6 @@ export default function GameRoom({
     return () => {
       window.removeEventListener('leaveGameRequest', handleLeaveGameRequest);
       if (socketInstance) {
-        console.log(`%c[${new Date().toLocaleTimeString()}] Emitting leaveRoom due to component unmount`, "color: orange; font-weight: bold");
         // Explicitly emit leave room before disconnecting
         socketInstance.emit("leaveRoom");
         socketInstance.disconnect();
@@ -192,12 +175,7 @@ export default function GameRoom({
 
   // Add logging for the leaveRoom function outside useEffect
   const leaveRoom = () => {
-    console.log(`%c[${new Date().toLocaleTimeString()}] Explicitly leaving room`, "color: orange; font-weight: bold", {
-      playerId: initialPlayerId,
-      playerName: initialPlayerName,
-      roomId
-    });
-    
+   
     if (socket) {
       // Explicitly notify server that player is leaving
       socket.emit("leaveRoom");

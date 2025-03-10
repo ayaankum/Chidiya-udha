@@ -20,8 +20,6 @@ export const useGameStore = create<GameState>((set) => ({
   currentPlayer: null,
   setGameState: (state) => set({ gameState: state }),
   setPlayers: (players) => {
-    console.log("Setting players in store:", players)
-    
     // Ensure no duplicate players by ID
     const uniquePlayers = Object.values(
       players.reduce((acc: Record<string, Player>, player) => {
