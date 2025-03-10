@@ -1,14 +1,15 @@
 "use client"
 
-import type { Metadata } from 'next'
 import './globals.css'
 import { useEffect } from 'react'
+import Footer from '@/components/footer'
+import { developerInfo } from '@/lib/config'
 
-const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
-}
+// metadata is now a variable, not an export since we're using client component
+const metadata = {
+  title: 'Chidiya Udh Game',
+  description: 'A multiplayer flying objects game',
+};
 
 export default function RootLayout({
   children,
@@ -34,7 +35,15 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+      </head>
+      <body className="flex flex-col min-h-screen">
+        <main className="flex-1">
+          {children}
+        </main>
+      </body>
     </html>
   )
 }

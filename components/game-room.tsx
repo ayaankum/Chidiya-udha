@@ -12,6 +12,8 @@ import GamePlay from "@/components/game-play"
 import GameResults from "@/components/game-results"
 import { Users } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
+import Footer from '@/components/footer'
+import { developerInfo } from '@/lib/config'
 
 export default function GameRoom({
   roomId,
@@ -272,10 +274,10 @@ export default function GameRoom({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-yellow-100 to-orange-100 p-4">
+    <div className="min-h-screen bg-gradient-to-b from-yellow-100 to-orange-100 p-4 flex flex-col">
       {renderPlayerLeftNotification()}
       
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto w-full flex-1">
         <div className="flex justify-between items-center mb-6">
           <GameLogo />
           <div className="flex items-center gap-2">
@@ -340,6 +342,12 @@ export default function GameRoom({
 
         {gameState === "results" && <GameResults players={players} isHost={isHost} onPlayAgain={playAgain} />}
       </div>
+      
+      <Footer 
+        githubUrl={developerInfo.githubUrl}
+        linkedinUrl={developerInfo.linkedinUrl}
+        developerName={developerInfo.name}
+      />
     </div>
   )
 }
