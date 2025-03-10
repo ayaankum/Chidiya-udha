@@ -20,7 +20,6 @@ export default function Home() {
 
   // Clean up any existing session data when landing on home page
   useEffect(() => {
-    // Clear any existing player data from localStorage
     localStorage.removeItem("playerName");
     localStorage.removeItem("playerId");
   }, []);

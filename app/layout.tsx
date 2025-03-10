@@ -1,9 +1,6 @@
 "use client"
-
 import './globals.css'
 import { useEffect } from 'react'
-import Footer from '@/components/footer'
-import { developerInfo } from '@/lib/config'
 
 // metadata is now a variable, not an export since we're using client component
 const metadata = {
@@ -32,7 +29,6 @@ export default function RootLayout({
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
-
   return (
     <html lang="en">
       <head>
