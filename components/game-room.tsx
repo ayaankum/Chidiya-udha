@@ -171,8 +171,6 @@ export default function GameRoom({
 
     // Add logging for the cleanup function in useEffect
     return () => {
-      console.log(`%c[${new Date().toLocaleTimeString()}] Component unmounting, cleaning up socket`, "color: orange; font-weight: bold");
-      
       window.removeEventListener('leaveGameRequest', handleLeaveGameRequest);
       if (socketInstance) {
         console.log(`%c[${new Date().toLocaleTimeString()}] Emitting leaveRoom due to component unmount`, "color: orange; font-weight: bold");
@@ -305,7 +303,38 @@ export default function GameRoom({
           <div className="flex items-center gap-2">
             <Card className="p-2 bg-white border-yellow-300 flex items-center gap-2">
               <Users className="h-5 w-5 text-orange-500" />
-              <span className="font-medium text-orange-700">Room: {roomId}</span>
+                <div className="flex items-center">
+                <span className="font-medium text-orange-700 mr-1">Room: {roomId}</span>
+                <button 
+                  onClick={() => {
+                  navigator.clipboard.writeText(roomId);
+                  const el = document.createElement('div');
+                  el.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1 rounded text-sm z-50';
+                  el.textContent = 'Room code copied!';
+                  document.body.appendChild(el);
+                  setTimeout(() => document.body.removeChild(el), 2000);
+                  }}
+                  className="text-orange-500 hover:text-orange-700 focus:outline-none"
+                  title="Copy room code"
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="transition-colors hover:stroke-orange-700"
+                    aria-hidden="true"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+                </div>
             </Card>
             <Button
               variant="outline"
