@@ -20,19 +20,19 @@ const rooms: Record<
 
 // Game objects database
 const gameObjects: GameObject[] = [
-  { name: "Bird", image: "/images/bird.png", canFly: true },
-  { name: "Airplane", image: "/images/airplane.png", canFly: true },
-  { name: "Butterfly", image: "/images/butterfly.png", canFly: true },
-  { name: "Bee", image: "/images/bee.png", canFly: true },
-  { name: "Helicopter", image: "/images/helicopter.png", canFly: true },
-  { name: "Rocket", image: "/images/rocket.png", canFly: true },
-  { name: "Bat", image: "/images/bat.png", canFly: true },
-  { name: "Dog", image: "/images/dog.png", canFly: false },
-  { name: "Cat", image: "/images/cat.png", canFly: false },
-  { name: "Car", image: "/images/car.png", canFly: false },
-  { name: "Fish", image: "/images/fish.png", canFly: false },
-  { name: "Elephant", image: "/images/elephant.png", canFly: false },
-  { name: "Penguin", image: "/images/penguin.png", canFly: false },
+  { name: "Bird", image: "/images/bird.webp", canFly: true },
+  { name: "Airplane", image: "/images/airplane.webp", canFly: true },
+  { name: "Butterfly", image: "/images/butterfly.webp", canFly: true },
+  { name: "Bee", image: "/images/bee.webp", canFly: true },
+  { name: "Helicopter", image: "/images/helicopter.webp", canFly: true },
+  { name: "Rocket", image: "/images/rocket.webp", canFly: true },
+  { name: "Bat", image: "/images/bat.webp", canFly: true },
+  { name: "Dog", image: "/images/dog.webp", canFly: false },
+  { name: "Cat", image: "/images/cat.webp", canFly: false },
+  { name: "Car", image: "/images/car.webp", canFly: false },
+  { name: "Fish", image: "/images/fish.webp", canFly: false },
+  { name: "Elephant", image: "/images/elephant.webp", canFly: false },
+  { name: "Penguin", image: "/images/penguin.webp", canFly: false },
 ]
 
 const SocketHandler = (_: NextApiRequest, res: NextApiResponseServerIO) => {
