@@ -8,6 +8,7 @@ import { Hand } from "lucide-react"
 import { useGameStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { useSound } from "@/lib/use-sound"
+import Image from "next/image"
 
 export default function GamePlay({
   onReaction,
@@ -81,10 +82,13 @@ export default function GamePlay({
               <div className="text-center">
                 <div className="mb-4 text-2xl font-bold text-orange-600">{currentObject.name}</div>
                 <div className="relative mb-6">
-                  <img
+                  <Image
                     src={currentObject.image || "/placeholder.svg"}
                     alt={currentObject.name}
+                    width={192}
+                    height={192}
                     className="w-48 h-48 object-contain mx-auto"
+                    priority
                   />
                   {reactionResult && (
                     <div
