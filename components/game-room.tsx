@@ -278,47 +278,47 @@ export default function GameRoom({
       {renderPlayerLeftNotification()}
       
       <div className="max-w-4xl mx-auto w-full flex-1">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <GameLogo />
-          <div className="flex items-center gap-2">
-            <Card className="p-2 bg-white border-yellow-300 flex items-center gap-2">
-              <Users className="h-5 w-5 text-orange-500" />
-                <div className="flex items-center">
-                <span className="font-medium text-orange-700 mr-1">Room: {roomId}</span>
-                <button 
-                  onClick={() => {
-                  navigator.clipboard.writeText(roomId);
-                  const el = document.createElement('div');
-                  el.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1 rounded text-sm z-50';
-                  el.textContent = 'Room code copied!';
-                  document.body.appendChild(el);
-                  setTimeout(() => document.body.removeChild(el), 2000);
-                  }}
-                  className="text-orange-500 hover:text-orange-700 focus:outline-none"
-                  title="Copy room code"
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    className="transition-colors hover:stroke-orange-700"
-                    aria-hidden="true"
-                  >
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                </button>
-                </div>
+          <div className="flex flex-wrap w-full sm:w-auto justify-center sm:justify-end items-center gap-2">
+            <Card className="p-2 bg-white border-yellow-300 flex items-center gap-2 w-full sm:w-auto">
+              <Users className="h-5 w-5 text-orange-500 flex-shrink-0" />
+              <div className="flex items-center overflow-hidden">
+          <span className="font-medium text-orange-700 mr-1 text-sm sm:text-base truncate">Room: {roomId}</span>
+          <button 
+            onClick={() => {
+            navigator.clipboard.writeText(roomId);
+            const el = document.createElement('div');
+            el.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1 rounded text-sm z-50';
+            el.textContent = 'Room code copied!';
+            document.body.appendChild(el);
+            setTimeout(() => document.body.removeChild(el), 2000);
+            }}
+            className="text-orange-500 hover:text-orange-700 focus:outline-none flex-shrink-0"
+            title="Copy room code"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className="transition-colors hover:stroke-orange-700"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+              </div>
             </Card>
             <Button
               variant="outline"
-              className="border-orange-300 text-orange-700 hover:bg-orange-100"
+              className="border-orange-300 text-orange-700 hover:bg-orange-100 w-full sm:w-auto"
               onClick={leaveRoom}
             >
               Leave Room
